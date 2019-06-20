@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <link href="https://fonts.googleapis.com/css?family=Roboto:100,300,400,500,700,900|Material+Icons" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.materialdesignicons.com/3.6.95/css/materialdesignicons.min.css">
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=IBM+Plex+Sans:200,400,700"> 
+    <!-- <link href="static/main.css" rel="stylesheet"> -->
+    
+  </head>
+  <body>
+    <div id="app">
+      <v-app>
+        <v-container fluid overflow-auto>
+          <v-layout fill-height>
+            <v-flex xs3 mr-3>
+              <v-layout column white pa-2 fill-height>
+                <v-flex>
+                  <v-layout column>
+                    <v-select label="Select group" :items="groups" v-model="selected_group" outline></v-select>
+                    <v-flex headline>Group info</v-flex>
+                    <v-flex subheading font-weight-bold mt-2>name</v-flex>
+                    <v-flex body-1>{{ group_info.name }}</v-flex>
+                    <v-flex subheading font-weight-bold mt-2>icon</v-flex>
+                    <v-flex body-1><span :class="['mdi', 'mdi-'+group_info.icon]"></span></v-flex>
+                    <v-flex subheading font-weight-bold mt-2>member</v-flex>
+                    <v-flex body-1 v-for="member in group_info.members">{{ member }}</v-flex>
+                  </v-layout>
+                </v-flex>
+              </v-layout>
+            </v-flex>
+            <v-flex xs9 shrink overflow-hidden>
+              <v-layout column fill-height>
+                <v-flex mb-3 white display-4>
+                  <v-layout row align-content-center my-5>
+                    <v-spacer></v-spacer>
+                    <v-flex shrink text-xs-center mx-2 v-for="d in dice_face"><span :class="['mdi', 'mdi-dice-'+d]"></span></v-flex>
+                    <v-spacer></v-spacer>
+                  </v-layout>
+                </v-flex>
+                <v-flex display-3 mb-3 white>
+                  <v-layout row justify-center>
+                    <v-spacer></v-spacer>
+                    <v-spacer></v-spacer>
+                    <v-btn icon large><v-icon>mdi-play</v-icon></v-btn>
+                    <v-spacer></v-spacer>
+                    <span class="mdi mdi-skip-next"></span>
+                    <v-spacer></v-spacer>
+                    <span class="mdi mdi-play-circle-outline"></span>
+                    <v-spacer></v-spacer>
+                    <v-spacer></v-spacer>
+                  </v-layout>
+                </v-flex>
+                <v-flex white overflow-auto>
+                  <v-layout column px-2>
+                    <template v-for="message,i in messages">
+                      <v-flex my-2>{{ message }}</v-flex>
+                      <v-divider v-if="i < messages.length-1"></v-divider>
+                    </template>
+                  </v-layout>
+                </v-flex>
+              </v-layout>
+            </v-flex>
+          </v-layout>
+        </v-container>
+      </v-app>
+    </div>
+    
+    <style>
+      html, body { width: 100vw; height: 100vh; overflow: auto; display: flex; }
+      #app { flex-grow: 1; display: flex; }
+      .overflow-auto { overflow: auto; }
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <script src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"></script>
+    <script>
+      var app = new Vue({
+        el: '#app',
+        data: {
+          groups: ['a','b','c'],
+          selected_group: 'b',
+          group_info: {
+            name: 'group name',
+            icon: 'plus',
+            members: ['member', 'member2']
+          },
+          messages: ['msg 1', 'msg 2', 'msg 3', 'msg 11', 'msg 12', 'msg 13', 'msg 21', 'msg 22', 'msg 23', 'msg 31', 'msg 32', 'msg 33', 'msg 41', 'msg 42', 'msg 43', 'msg 51', 'msg 52', 'msg 53', 'msg 61', 'msg 62', 'msg 63','msg 71', 'msg 72', 'msg 73'],
+          dice_number: 5,
+          dice_face: [1,2,3,4,5]
+        }
+      })
+    </script>
+  </body>
+</html>
