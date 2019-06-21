@@ -18,14 +18,14 @@
               <v-layout column white pa-2 fill-height>
                 <v-flex>
                   <v-layout column>
-                    <v-select label="Select group" :items="groups" v-model="selected_group" outline></v-select>
+                    <v-select label="Select group" :items="ai_players" v-model="selected_ai" outline></v-select>
                     <v-flex headline>Group info</v-flex>
                     <v-flex subheading font-weight-bold mt-2>name</v-flex>
-                    <v-flex body-1>{{ group_info.name }}</v-flex>
+                    <v-flex body-1>{{ current_ai_info.name }}</v-flex>
                     <v-flex subheading font-weight-bold mt-2>icon</v-flex>
-                    <v-flex body-1><span :class="['mdi', 'mdi-'+group_info.icon]"></span></v-flex>
+                    <v-flex body-1><span :class="['mdi', 'mdi-'+current_ai_info.icon]"></span></v-flex>
                     <v-flex subheading font-weight-bold mt-2>member</v-flex>
-                    <v-flex body-1 v-for="member in group_info.members">{{ member }}</v-flex>
+                    <v-flex body-1 v-for="member in current_ai_info.members">{{ member }}</v-flex>
                   </v-layout>
                 </v-flex>
               </v-layout>
@@ -78,24 +78,83 @@
       var app = new Vue({
         el: '#app',
         data: {
-          groups: ['a','b','c'],
-          selected_group: 'b',
-          group_info: {
+          ai_players: ['a','b','c'],
+          selected_ai: 'b',
+          ai_info: [{
             name: 'group name',
-            icon: 'plus',
+            icon: 'b',
             members: ['member', 'member2']
-          },
+          }],
+          // ai_info: {
+          //   name: 'group name',
+          //   icon: 'plus',
+          //   members: ['member', 'member2']
+          // },
           messages: ['msg 1', 'msg 2', 'msg 3', 'msg 11', 'msg 12', 'msg 13', 'msg 21', 'msg 22', 'msg 23', 'msg 31', 'msg 32', 'msg 33', 'msg 41', 'msg 42', 'msg 43', 'msg 51', 'msg 52', 'msg 53', 'msg 61', 'msg 62', 'msg 63','msg 71', 'msg 72', 'msg 73'],
           dice_number: 5,
-          dice_face: [1,2,3,4,5]
+          dice_face: [1,2,3,4,5],
+          ai_players: [],
+        },
+        computed: {
+          current_ai_info: function () {
+            let c_ai = this.ai_info.find(x => x.module == this.selected_ai);
+            return c_ai ? c_ai : { name: '', icon: this.selected_ai, members: '' }
+          }
+        },
+        mounted: function () {
+          this.getAiList()
+            .then(r => {
+              this.selected_ai = this.ai_players[0];
+              return r;
+            })
+            .then(this.initAllAiPlayers)
+            .then(r => {
+              this.ai_info = [];
+              this.ai_info.push(...r);
+              return r;
+            })
+            .then(console.log);
         },
         methods: {
+          getAiList: function() {
+            const request = new Request('./get-ai-players');
+            return fetch(request)
+            .then(r => r.json())
+            .then(r => {
+              this.ai_players = r;
+              return r;
+            });
+          },
+          initAiPlayer: function (ai_name) {
+            const request = new Request(`./init-ai-player/${ai_name}`);
+            return fetch(request)
+              .then(r => {
+                return r.json()
+              })
+              .then(r => {
+                if (r.error) {
+                  console.error(r.error_msg);
+                  return Promise.reject(r.error_msg);
+                } else {
+                  console.log(r.msg);
+                  return Promise.resolve(r);
+                }
+              });
+          },
+          initAllAiPlayers: function () {
+            return Promise.all(this.ai_players.map(x => this.initAiPlayer(x).then(r => ({
+              name: r.group_name,
+              module: x,
+              icon: r.group_icon,
+              members: r.group_members
+            }))));
+          },
           rollDice: function (dice_index) {
-            console.log(dice_index);
-            for (let i; i < dice_index.length; i++) {
+            for (let i = 0; i < dice_index.length; i++) {
               let rolled = Math.max(1, Math.ceil(Math.random()*6));
               this.$set(this.dice_face, dice_index[i], rolled);
             }
+            return this.dice_face;
           }
         }
       })

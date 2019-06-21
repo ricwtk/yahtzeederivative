@@ -1,0 +1,6 @@
+Group name: dicey
+Group icon : dice-6
+
+Group members:
+I Am 123432
+You Are 098453

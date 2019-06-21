@@ -1,0 +1,7 @@
+Group name: Dice Master
+Group icon : space-invaders
+
+Group members:
+Samuel Ting 121314
+Anne Robinsons 543210
+Johnny Peterson 947392
