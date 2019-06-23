@@ -21,33 +21,43 @@
                     <v-select label="Select group" :items="ai_players" v-model="selected_ai" outline></v-select>
                     <v-flex headline>Group info</v-flex>
                     <v-flex subheading font-weight-bold mt-2>name</v-flex>
-                    <v-flex body-1>{{ current_ai_info.name }}</v-flex>
+                    <v-flex body-1>{{ current_ai.name }}</v-flex>
                     <v-flex subheading font-weight-bold mt-2>icon</v-flex>
-                    <v-flex body-1><span :class="['mdi', 'mdi-'+current_ai_info.icon]"></span></v-flex>
+                    <v-flex body-1><span :class="['mdi', 'mdi-'+current_ai.icon]"></span></v-flex>
                     <v-flex subheading font-weight-bold mt-2>member</v-flex>
-                    <v-flex body-1 v-for="member in current_ai_info.members">{{ member }}</v-flex>
+                    <v-flex body-1 v-for="member in current_ai.members">{{ member }}</v-flex>
+                    <v-flex subheading font-weight-bold mt-2>games</v-flex>
+                    <v-data-table :headers="one_ai_table_header" :items="one_ai_table_items">
+                      <template v-slot:items="props">
+                        <td>{{ props.item.game_num }}</td>
+                        <td>{{ props.item.points }}</td>
+                      </template>
+                    </v-data-table>
+                    <!-- <v-flex body-1 v-for="game in current_ai.games">{{ game.rolled }}</v-flex> -->
                   </v-layout>
                 </v-flex>
               </v-layout>
             </v-flex>
             <v-flex xs9 shrink overflow-hidden>
               <v-layout column fill-height>
-                <v-flex mb-3 white display-4>
+                <v-flex mb-3 white display-4 shrink>
                   <v-layout row align-content-center my-5>
                     <v-spacer></v-spacer>
-                    <v-flex shrink text-xs-center mx-2 v-for="d in dice_face"><span :class="['mdi', 'mdi-dice-'+d]"></span></v-flex>
+                    <v-flex shrink text-xs-center mx-2 v-for="d,i in dice_face" :class="just_rolled[i] == 1 ? 'just-rolled' : 'not-rolled'"><span :class="['mdi', 'mdi-dice-'+d]"></span></v-flex>
                     <v-spacer></v-spacer>
                   </v-layout>
                 </v-flex>
-                <v-flex display-3 mb-3 white>
+                <v-flex display-3 mb-3 white shrink>
                   <v-layout row justify-center>
                     <v-spacer></v-spacer>
                     <v-spacer></v-spacer>
-                    <v-btn icon large fab><v-icon>mdi-play</v-icon></v-btn>
+                    <v-btn icon large fab title="autorun this game" @click="runAGame" :disabled="!can_game_continue"><v-icon>mdi-play</v-icon></v-btn>
                     <v-spacer></v-spacer>
-                    <v-btn icon large fab><v-icon>mdi-skip-next</v-icon></v-btn>
+                    <v-btn icon large fab title="roll once" @click="rollOnce" :disabled="!can_game_continue"><v-icon>mdi-skip-next</v-icon></v-btn>
                     <v-spacer></v-spacer>
-                    <v-btn icon large fab><v-icon>mdi-play-circle-outline</v-icon></v-btn>
+                    <v-btn icon large fab title="autorun all games"><v-icon>mdi-play-circle-outline</v-icon></v-btn>
+                    <v-spacer></v-spacer>
+                    <v-btn icon large fab title="new game" @click="newGame"><v-icon>mdi-new-box</v-icon></v-btn>
                     <v-spacer></v-spacer>
                     <v-spacer></v-spacer>
                   </v-layout>
@@ -73,6 +83,7 @@
       .overflow-auto { overflow: auto; }
     </style>
     <script src="https://cdn.jsdelivr.net/npm/vue"></script>
+    <!-- <script src="static/vue.js"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/vuetify/dist/vuetify.js"></script>
     <script>
       var app = new Vue({
@@ -85,20 +96,45 @@
             icon: 'b',
             members: ['member', 'member2']
           }],
-          // ai_info: {
-          //   name: 'group name',
-          //   icon: 'plus',
-          //   members: ['member', 'member2']
-          // },
-          messages: ['msg 1', 'msg 2', 'msg 3', 'msg 11', 'msg 12', 'msg 13', 'msg 21', 'msg 22', 'msg 23', 'msg 31', 'msg 32', 'msg 33', 'msg 41', 'msg 42', 'msg 43', 'msg 51', 'msg 52', 'msg 53', 'msg 61', 'msg 62', 'msg 63','msg 71', 'msg 72', 'msg 73'],
           dice_number: 5,
           dice_face: [1,2,3,4,5],
+          just_rolled: [1,0,0,0,0],
           ai_players: [],
+          current_game_init: {
+            rolled: [],
+            reroll_index: []
+          },
+          one_ai_table_header: [
+            { text: 'Game', value: 'game_num', align: 'center', sortable: false },
+            { text: 'Points', value: 'points', align: 'center', sortable: false },
+          ]
         },
         computed: {
-          current_ai_info: function () {
+          current_ai: function () {
             let c_ai = this.ai_info.find(x => x.module == this.selected_ai);
-            return c_ai ? c_ai : { name: '', icon: this.selected_ai, members: '' }
+            return c_ai ? c_ai : { name: '', module: this.selected_ai, icon: '', members: [], games: [] }
+          },
+          messages: function () {
+            let m = [];
+            this.current_game.rolled.forEach((v, i) => {
+              m.push("rolled dice: " + v.join(', '));
+              if (this.current_game.reroll_index[i]) {
+                m.push("to reroll: " + this.current_game.reroll_index[i].join(', '));
+              }
+            });
+            return m;
+          },
+          current_game: function () {
+            return this.current_ai.games[this.current_ai.games.length - 1] || JSON.parse(JSON.stringify(this.current_game_init));
+          },
+          can_game_continue: function () {
+            return this.current_game.rolled.length < 6 & (this.current_game.reroll_index.length > 0 ?  this.current_game.reroll_index[this.current_game.reroll_index.length - 1].length > 0 : true);
+          },
+          one_ai_table_items: function () {
+            return this.current_ai.games.map((x, i) => ({
+              game_num: i+1,
+              points: this.getPoints(x.rolled[x.rolled.length - 1])
+            }));
           }
         },
         mounted: function () {
@@ -146,7 +182,8 @@
               name: r.group_name,
               module: x,
               icon: r.group_icon,
-              members: r.group_members
+              members: r.group_members,
+              games: [JSON.parse(JSON.stringify(this.current_game_init))]
             }))));
           },
           rollDice: function (dice_index) {
@@ -154,7 +191,54 @@
               let rolled = Math.max(1, Math.ceil(Math.random()*6));
               this.$set(this.dice_face, dice_index[i], rolled);
             }
-            return this.dice_face;
+            this.current_ai.games[this.current_ai.games.length - 1].rolled.push(JSON.parse(JSON.stringify(this.dice_face)));
+          },
+          newGame: function() {
+            console.log(JSON.stringify(this.current_ai.games[this.current_ai.games.length - 1]), JSON.stringify(this.current_game_init))
+            if (JSON.stringify(this.current_ai.games[this.current_ai.games.length - 1]) !== JSON.stringify(this.current_game_init)) {
+              this.current_ai.games.push(JSON.parse(JSON.stringify(this.current_game_init)));
+            }
+          },
+          requestNextReroll: function () {
+            console.log(this.current_ai.module, this.dice_face);
+            const request = new Request(`./call-ai-player/${this.current_ai.module}/${this.dice_face.join(',')}/${6 - this.current_game.rolled.length}`);
+            return fetch(request)
+              .then(r => {
+                return r.json()
+              })
+              .then(r => {
+                if (r.error) {
+                  console.error(r.error_msg);
+                  return Promise.reject(r.error_msg);
+                } else {
+                  console.log(r.msg);
+                  this.current_game.reroll_index.push(r.reroll_dice)
+                  return Promise.resolve(r.reroll_dice);
+                }
+              });
+          },
+          rollOnce: function () {
+            if (this.current_game.reroll_index.length > 0) {
+              this.rollDice(this.current_game.reroll_index[this.current_game.reroll_index.length - 1]);
+            } else {
+              this.rollDice([...Array(this.dice_number).keys()]);
+            }
+            if (this.can_game_continue) return this.requestNextReroll().then(() => true);
+            else return Promise.resolve(false);
+          },
+          runAGame: function () {
+            rag = () => this.rollOnce()
+              .then(r => {
+                if (r) {
+                  return rag();
+                } else {
+                  Promise.resolve()
+                }
+              })
+            return rag();
+          },
+          getPoints: function (dice_face) {
+            return dice_face ? dice_face.reduce((acc, v) => acc + v, 0) : 0;
           }
         }
       })

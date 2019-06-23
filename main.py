@@ -20,44 +20,38 @@ def getAiPlayers():
 
 @app.route("/init-ai-player/<ai_name>")
 def initAiPlayer(ai_name):
-  # players.pop(ai_name, None)
-  if ai_name in players.keys():
+  players.pop(ai_name, None)
+  try:
+    mod = importlib.import_module("player.{}.player".format(ai_name))
+    players[ai_name] = getattr(mod, 'Player')()    
+  except:
     return fjson.jsonify({
       "error": True,
-      "error_msg": f"{ai_name} was initiated previously"
+      "error_msg": "{} is not available".format(ai_name)
     })
   else:
-    try:
-      mod = importlib.import_module("player.{}.player".format(ai_name))
-      players[ai_name] = getattr(mod, 'Player')()    
-    except:
-      return fjson.jsonify({
-        "error": True,
-        "error_msg": "{} is not available".format(ai_name)
-      })
-    else:
-      # get group information
-      with open("./player/{}/group members.txt".format(ai_name)) as f:
-        found_group_member = False
-        group_members = []
-        for line in f:
-          stripped = line.strip()
-          if found_group_member and stripped:
-            group_members.append(stripped)
-          if stripped.lower().startswith("group name"):
-            group_name = stripped.split(":")[1].strip()
-          elif stripped.lower().startswith("group icon"):
-            group_icon = stripped.split(":")[1].strip()
-          elif stripped.lower().startswith("group members"):
-            found_group_member = True
-        # json.dump([], open(os.path.join(result_dir, "players", f"{ai_name}.json"), 'w'))
-      return fjson.jsonify({
-        "error": False,
-        "msg": "{} is initiated".format(ai_name),
-        "group_name": group_name,
-        "group_icon": group_icon,
-        "group_members": group_members
-      })
+    # get group information
+    with open("./player/{}/group members.txt".format(ai_name)) as f:
+      found_group_member = False
+      group_members = []
+      for line in f:
+        stripped = line.strip()
+        if found_group_member and stripped:
+          group_members.append(stripped)
+        if stripped.lower().startswith("group name"):
+          group_name = stripped.split(":")[1].strip()
+        elif stripped.lower().startswith("group icon"):
+          group_icon = stripped.split(":")[1].strip()
+        elif stripped.lower().startswith("group members"):
+          found_group_member = True
+      # json.dump([], open(os.path.join(result_dir, "players", f"{ai_name}.json"), 'w'))
+    return fjson.jsonify({
+      "error": False,
+      "msg": "{} is initiated".format(ai_name),
+      "group_name": group_name,
+      "group_icon": group_icon,
+      "group_members": group_members
+    })
 
 @app.route("/call-ai-player/<ai_name>/<dice_face>/<n_rerolls>")
 def callAiPlayer(ai_name, dice_face, n_rerolls):
