@@ -150,9 +150,6 @@ var app = new Vue({
         })
       return rag();
     },
-    getPoints: function (dice_face) {
-      return dice_face ? dice_face.reduce((acc, v) => acc + v, 0) : 0;
-    },
     formatDetails: function (details) {
       let m = [];
       details.rolled.forEach((v, i) => {
@@ -162,6 +159,25 @@ var app = new Vue({
         }
       });
       return m;
-    }
+    },
+    getPoints: function (dice_face) {
+      let points = dice_face ? dice_face.reduce((acc, v) => acc + v, 0) : 0;
+      if (points !== 0) {
+        let freq = Array(6);
+        freq.fill(0);
+        dice_face.forEach(x => {
+          freq[x-1] += 1;
+        });
+        if (freq.indexOf(5) !== -1) { points += 70; } //five in a row
+        else if (freq.indexOf(4) !== -1) { points += 40; } //four + one
+        else if (freq.indexOf(3) !== -1) { points += (freq.indexOf(2) !== -1) ? 50 : 30; } //three + two or three + one + one
+        else {
+          let sorted_df = dice_face.slice(0);
+          sorted_df.sort();
+          if (sorted_df.reduce((acc,val,idx,arr) => { if (idx > 0) { acc.push(val - arr[idx-1]); } return acc; }, []).every(el => el == 1)) { points += 60; } // straights
+        }
+      }
+      return points;
+    },
   }
 });
