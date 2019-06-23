@@ -14,8 +14,8 @@
       <v-app>
         <v-container fluid overflow-auto>
           <v-layout fill-height>
-            <v-flex xs3 mr-3>
-              <v-layout column white pa-2 fill-height>
+            <v-flex xs3 mr-3 overflow-hidden>
+              <v-layout column white pa-2 fill-height overflow-auto>
                 <v-flex>
                   <v-layout column>
                     <v-select label="Select group" :items="ai_players" v-model="selected_ai" outline></v-select>
@@ -27,13 +27,26 @@
                     <v-flex subheading font-weight-bold mt-2>member</v-flex>
                     <v-flex body-1 v-for="member in current_ai.members">{{ member }}</v-flex>
                     <v-flex subheading font-weight-bold mt-2>games</v-flex>
-                    <v-data-table :headers="one_ai_table_header" :items="one_ai_table_items">
+                    <v-data-table :headers="one_ai_table_header" :items="one_ai_table_items" item-key="game_num">
                       <template v-slot:items="props">
-                        <td>{{ props.item.game_num }}</td>
-                        <td>{{ props.item.points }}</td>
+                        <tr @click="props.expanded = !props.expanded">
+                          <td>{{ props.item.game_num }}</td>
+                          <td>{{ props.item.points }}</td>
+                        </tr>
+                      </template>
+                      <template v-slot:expand="props">
+                        <v-card class="pa-2">
+                          <v-data-table class="elevation-3" hide-headers hide-actions :items="formatDetails(props.item.details)">
+                            <template v-slot:items="props">
+                              <tr>
+                                <td>{{ props.item.label }}</td>
+                                <td>{{ props.item.value }}</td>
+                              </tr>
+                            </template>
+                          </v-data-table>
+                        </v-card>
                       </template>
                     </v-data-table>
-                    <!-- <v-flex body-1 v-for="game in current_ai.games">{{ game.rolled }}</v-flex> -->
                   </v-layout>
                 </v-flex>
               </v-layout>
@@ -133,7 +146,8 @@
           one_ai_table_items: function () {
             return this.current_ai.games.map((x, i) => ({
               game_num: i+1,
-              points: this.getPoints(x.rolled[x.rolled.length - 1])
+              points: this.getPoints(x.rolled[x.rolled.length - 1]),
+              details: x
             }));
           }
         },
@@ -239,6 +253,16 @@
           },
           getPoints: function (dice_face) {
             return dice_face ? dice_face.reduce((acc, v) => acc + v, 0) : 0;
+          },
+          formatDetails: function (details) {
+            let m = [];
+            details.rolled.forEach((v, i) => {
+              m.push({ label: 'rolled', value: v.join(', ') });
+              if (details.reroll_index[i]) {
+                m.push({ label: 'reroll', value: details.reroll_index[i].join(', ') });
+              }
+            });
+            return m;
           }
         }
       })
