@@ -54,13 +54,13 @@ var app = new Vue({
       }, 0);
       let h = [...Array(max_game_num).keys()].map(x => ({ text: `Game ${x+1}`, value: `${x}`, align: 'center' }));
       h.splice(0,0,{ text: 'Player', value: 'player' });
-      h.splice(h.length,0,{ text: 'Total', value: 'total', align: 'center' });
+      h.push({ text: 'Total', value: 'total', align: 'center' });
       return h;
     },
     result_summary_items: function () {
       return this.ai_info.map(x => ({
         name: x.name,
-        games: [...Array(this.result_summary_header.length).keys()].map(i => x.games[i] ? this.getPoints(x.games[i].rolled[x.games[i].rolled.length - 1]) : 0)
+        games: [...Array(this.result_summary_header.length-2).keys()].map(i => x.games[i] ? this.getPoints(x.games[i].rolled[x.games[i].rolled.length - 1]) : 0)
       }));
     }
   },
@@ -203,5 +203,33 @@ var app = new Vue({
       }
       return points;
     },
+    saveGames: function () {
+      let req = new Request("./save-game-result", {
+        method: 'POST',
+        body: JSON.stringify(this.ai_info)
+      });
+      
+      fetch(req)
+        .then(r => {
+          if (r.status == 200) return r.json();
+          else throw new Error("Error saving game result") 
+        })
+        .then(console.log);
+    },
+    loadGames: function () {
+      let req = new Request("./load-game-result");
+      fetch(req)
+        .then(r => {
+          if (r.status == 200) return r.json();
+          else throw new Error("Error loading game result")
+        })
+        .then(r => {
+          r.forEach(x => {
+            let thisai = this.ai_info.find(y => x.name == y.name && x.module == y.module && x.icon == y.icon);
+            if (thisai) thisai.games = x.games.slice(0);
+          });
+          console.log(r);
+        })
+    }
   }
 });

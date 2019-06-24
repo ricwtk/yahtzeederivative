@@ -7,8 +7,8 @@ import time
 app = Flask(__name__)
 
 players = {}
-result_dir = os.path.join("static", "results")
-players_json = os.path.join(result_dir, "players.json")
+# result_dir = os.path.join("static", "results")
+result_json = os.path.join("static", "results.json")
 
 @app.route("/")
 def showFrontend():
@@ -73,36 +73,16 @@ def callAiPlayer(ai_name, dice_face, n_rerolls):
 def getInitAiPlayers():
   return fjson.jsonify(list(players.keys()))
 
-# @app.route("/save-game-result", methods=['POST'])
-# def saveGameResult():
-#   game_result = json.loads(request.data)
-#   firstplayer_json = os.path.join(result_dir, "players", "{}.json".format(game_result["play"][0]["module"]))
-#   # print(json.dumps(game_result, indent=2))
+@app.route("/save-game-result", methods=['POST'])
+def saveGameResult():
+  game_result = json.loads(request.data)
+  json.dump(game_result, open(result_json, 'w'))
+  return fjson.jsonify("success")
 
-#   # check if json file exists
-#   players = json.load(open(players_json, 'r')) if os.path.isfile(players_json) else {}
-#   for i in range(len(game_result['play'])):
-#     if not game_result['play'][i]['module'] in players:
-#       # save player detail to players.json if not present
-#       players[game_result['play'][i]['module']] = game_result['play'][i]
-#   # save to players_json
-#   json.dump(players, open(players_json, 'w'))
-#   # save move
-#   # check if json file exists
-#   firstplayer = json.load(open(firstplayer_json, 'r')) if os.path.isfile(firstplayer_json) else []
-#   # replace the game result if existed
-#   second_players = [g['second_player'] for g in firstplayer]
-#   game_play = {
-#     'second_player': game_result['play'][1]['module'],
-#     'moves': game_result['moves'],
-#     'result': game_result['result']
-#   }
-#   if game_result['play'][1]['module'] in second_players:
-#     firstplayer[second_players.index(game_result['play'][1]['module'])] = game_play
-#   else: # add the game result
-#     firstplayer.append(game_play)
-#   # save to firstplayer_json
-#   json.dump(firstplayer, open(firstplayer_json, 'w'))
-#   return fjson.jsonify("success")
-
+@app.route("/load-game-result")
+def loadGameResult():
+  game_result = []
+  if os.path.isfile(result_json):
+    game_result = json.load(open(result_json, 'r'))
+  return fjson.jsonify(game_result)
 
