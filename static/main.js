@@ -172,7 +172,13 @@ var app = new Vue({
           else if (selected_ai_idx < this.ai_players.length - 1) { selected_ai_idx += 1; this.selected_ai = this.ai_players[selected_ai_idx]; return ra(); }
           else Promise.resolve();
         });
-      return ra();
+      let fcnToRun = () => { console.log('All done') };
+      while (true) {
+        if (this.current_ai.games.length < this.games_to_play) { fcnToRun = ra; break; }
+        else if (selected_ai_idx < this.ai_players.length - 1) { selected_ai_idx += 1; this.selected_ai = this.ai_players[selected_ai_idx]; }
+        else break;
+      }
+      return fcnToRun();
     },
     formatDetails: function (details) {
       let m = [];
