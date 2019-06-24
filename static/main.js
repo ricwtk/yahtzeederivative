@@ -1,17 +1,12 @@
 var app = new Vue({
   el: '#app',
   data: {
-    ai_players: ['a','b','c'],
-    selected_ai: 'b',
-    ai_info: [{
-      name: 'group name',
-      icon: 'b',
-      members: ['member', 'member2']
-    }],
+    ai_players: [],
+    selected_ai: '',
+    ai_info: [],
     dice_number: 5,
     dice_face: [1,2,3,4,5],
     just_rolled: [1,0,0,0,0],
-    ai_players: [],
     current_game_init: {
       rolled: [],
       reroll_index: []
@@ -19,7 +14,9 @@ var app = new Vue({
     one_ai_table_header: [
       { text: 'Game', value: 'game_num', align: 'center', sortable: false },
       { text: 'Points', value: 'points', align: 'center', sortable: false },
-    ]
+    ],
+    games_to_play: 5,
+    show_result_summary: false,
   },
   computed: {
     current_ai: function () {
@@ -47,6 +44,23 @@ var app = new Vue({
         game_num: i+1,
         points: this.getPoints(x.rolled[x.rolled.length - 1]),
         details: x
+      }));
+    },
+    result_summary_header: function () {
+      let max_game_num = this.ai_info.reduce((acc,x) => {
+        let game_num = x.games.length;
+        if (game_num > acc) acc = game_num;
+        return acc
+      }, 0);
+      let h = [...Array(max_game_num).keys()].map(x => ({ text: `Game ${x+1}`, value: `${x}`, align: 'center' }));
+      h.splice(0,0,{ text: 'Player', value: 'player' });
+      h.splice(h.length,0,{ text: 'Total', value: 'total', align: 'center' });
+      return h;
+    },
+    result_summary_items: function () {
+      return this.ai_info.map(x => ({
+        name: x.name,
+        games: [...Array(this.result_summary_header.length).keys()].map(i => x.games[i] ? this.getPoints(x.games[i].rolled[x.games[i].rolled.length - 1]) : 0)
       }));
     }
   },
@@ -107,7 +121,6 @@ var app = new Vue({
       this.current_ai.games[this.current_ai.games.length - 1].rolled.push(JSON.parse(JSON.stringify(this.dice_face)));
     },
     newGame: function() {
-      console.log(JSON.stringify(this.current_ai.games[this.current_ai.games.length - 1]), JSON.stringify(this.current_game_init))
       if (JSON.stringify(this.current_ai.games[this.current_ai.games.length - 1]) !== JSON.stringify(this.current_game_init)) {
         this.current_ai.games.push(JSON.parse(JSON.stringify(this.current_game_init)));
       }
@@ -124,7 +137,6 @@ var app = new Vue({
             console.error(r.error_msg);
             return Promise.reject(r.error_msg);
           } else {
-            console.log(r.msg);
             this.current_game.reroll_index.push(r.reroll_dice)
             return Promise.resolve(r.reroll_dice);
           }
@@ -140,15 +152,27 @@ var app = new Vue({
       else return Promise.resolve(false);
     },
     runAGame: function () {
-      rag = () => this.rollOnce()
+      let rag = () => this.rollOnce()
         .then(r => {
           if (r) {
             return rag();
           } else {
-            Promise.resolve()
+            Promise.resolve();
           }
-        })
+        });
       return rag();
+    },
+    runAll: function () {
+      let selected_ai_idx = 0;
+      this.selected_ai = this.ai_players[selected_ai_idx];
+      let ra = () => this.runAGame()
+        .then(r => {
+          console.log(this.current_ai.games.length, selected_ai_idx);
+          if (this.current_ai.games.length < this.games_to_play) { this.newGame(); return ra(); }
+          else if (selected_ai_idx < this.ai_players.length - 1) { selected_ai_idx += 1; this.selected_ai = this.ai_players[selected_ai_idx]; return ra(); }
+          else Promise.resolve();
+        });
+      return ra();
     },
     formatDetails: function (details) {
       let m = [];

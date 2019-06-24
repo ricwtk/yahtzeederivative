@@ -67,10 +67,12 @@
                     <v-btn icon large fab title="roll once" @click="rollOnce" :disabled="!can_game_continue"><v-icon>mdi-skip-next</v-icon></v-btn>
                     <v-spacer></v-spacer>
                     <v-btn icon large fab title="autorun this game" @click="runAGame" :disabled="!can_game_continue"><v-icon>mdi-play</v-icon></v-btn>
-                    <!-- <v-spacer></v-spacer> -->
-                    <!-- <v-btn icon large fab title="autorun all games"><v-icon>mdi-play-circle-outline</v-icon></v-btn> -->
+                    <v-spacer></v-spacer>
+                    <v-btn icon large fab title="autorun all games" @click="runAll"><v-icon>mdi-play-circle-outline</v-icon></v-btn>
                     <v-spacer></v-spacer>
                     <v-btn icon large fab title="new game" @click="newGame"><v-icon>mdi-new-box</v-icon></v-btn>
+                    <v-spacer></v-spacer>
+                    <v-btn icon large fab title="show result summary" @click.stop="show_result_summary = !show_result_summary"><v-icon>mdi-account-multiple</v-icon></v-btn>
                     <v-spacer></v-spacer>
                     <v-spacer></v-spacer>
                   </v-layout>
@@ -85,6 +87,28 @@
                 </v-flex>
               </v-layout>
             </v-flex>
+            <v-dialog v-model="show_result_summary">
+              <v-card>
+                <v-card-title>Result summary</v-card-title>
+                <v-divider></v-divider>
+                <v-flex mx-5>
+                  <v-data-table :headers="result_summary_header" :items="result_summary_items">
+                    <template v-slot:items="props">
+                      <tr>
+                        <td>{{ props.item.name }}</td>
+                        <td v-for="g in props.item.games" class="text-xs-center">{{ g }}</td>
+                        <td class="font-weight-bold text-xs-center">{{ props.item.games.reduce((acc,val) => acc + val, 0) }}</td>
+                      </tr>
+                    </template>
+                  </v-data-table>
+                </v-flex>
+                <v-divider></v-divider>
+                <v-card-actions align-content-right>
+                  <v-spacer></v-spacer>
+                  <v-btn flat @click="show_result_summary = !show_result_summary">Close</v-btn>
+                </v-card-actions>
+              </v-card>
+            </v-dialog>
           </v-layout>
         </v-container>
       </v-app>
