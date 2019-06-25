@@ -137,8 +137,9 @@ var app = new Vue({
             console.error(r.error_msg);
             return Promise.reject(r.error_msg);
           } else {
-            this.current_game.reroll_index.push(r.reroll_dice)
-            return Promise.resolve(r.reroll_dice);
+            let rrd = r.reroll_dice.filter((val,idx,arr) => arr.indexOf(val) == idx);
+            this.current_game.reroll_index.push(rrd)
+            return Promise.resolve(rrd);
           }
         });
     },
