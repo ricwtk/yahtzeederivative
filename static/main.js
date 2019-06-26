@@ -138,6 +138,7 @@ var app = new Vue({
             return Promise.reject(r.error_msg);
           } else {
             let rrd = r.reroll_dice.filter((val,idx,arr) => arr.indexOf(val) == idx);
+            rrd = rrd.filter(val => val < this.dice_number);
             this.current_game.reroll_index.push(rrd)
             return Promise.resolve(rrd);
           }
