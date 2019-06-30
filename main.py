@@ -57,11 +57,13 @@ def initAiPlayer(ai_name):
 def callAiPlayer(ai_name, dice_face, n_rerolls):
   dice_face = [int(x) for x in dice_face.split(',')]
   if ai_name in players.keys():
+    rrd = players[ai_name].play(dice_face[:], int(n_rerolls))
+    print(rrd)
     return fjson.jsonify({
       "error": False,
       "dice_face": dice_face,
       "n_rerolls": n_rerolls,
-      "reroll_dice": players[ai_name].play(dice_face[:], int(n_rerolls))
+      "reroll_dice": rrd
     })
   else:
     return fjson.jsonify({

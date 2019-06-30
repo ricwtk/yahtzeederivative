@@ -15,7 +15,7 @@ var app = new Vue({
       { text: 'Game', value: 'game_num', align: 'center', sortable: false },
       { text: 'Points', value: 'points', align: 'center', sortable: false },
     ],
-    games_to_play: 5,
+    games_to_play: 20,
     show_result_summary: false,
   },
   computed: {
